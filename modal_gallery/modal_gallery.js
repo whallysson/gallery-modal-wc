@@ -56,14 +56,16 @@ $(function () {
 
     // ABRE BIBLIOTECA DE IMAGENS
     $('.arquivos').on('click', function () {
-        var modal = $(this).data('id');
+        var _this = $(this);
+        var modal = _this.data('id');
         var iframe = $(modal + ' .arquivos-uploads');
         var inputCoverFile = $('input[name="capa_cover_file"]');
         var imgCover = $('img.capa_cover').attr('src');
         var imgActive = (inputCoverFile.val() ? inputCoverFile.val() : imgCover);
         var w = 800, h = 400, thumbW = 120, thumbH = 120; // Define o tamanho da thumb
+        var pasta = (_this.data('dir') ? _this.data('dir') : 'images'); // Define a pasta dentro da uploads (courses, images, pages ou properties). Default é 'images'
 
-        $.get(BASE + "../_cdn/widgets/modal_gallery/modal_gallery.ajax.php", {imgActive: imgActive, thumbW: thumbW, thumbH: thumbH}, function (data) {
+        $.get(BASE + "../_cdn/widgets/modal_gallery/modal_gallery.ajax.php", {imgActive: imgActive, thumbW: thumbW, thumbH: thumbH, pasta: pasta}, function (data) {
             if (data.gallery) {
                 iframe.html(data.gallery);
 

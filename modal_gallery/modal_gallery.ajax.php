@@ -1,6 +1,6 @@
 <?php
 
-/** 
+/**
  * FUNÇÃO PARA Listar aquivos em um diretório
  */
 function Alldiretorios($dir) {
@@ -26,22 +26,23 @@ function Alldiretorios($dir) {
 $ImgActive = filter_input(INPUT_GET, 'imgActive', FILTER_DEFAULT);
 $thumbW = filter_input(INPUT_GET, 'thumbW', FILTER_DEFAULT);
 $thumbH = filter_input(INPUT_GET, 'thumbH', FILTER_DEFAULT);
+$DirImg = (filter_input(INPUT_GET, 'pasta', FILTER_DEFAULT) ? filter_input(INPUT_GET, 'pasta', FILTER_DEFAULT) . '/' : 'images/'); // diretorio das imagens dentro de uploads
 
 $jSON = null;
 
 // Diretorio das imagens
-$Dir = '../../../uploads/';
+$Dir = "../../../uploads/{$DirImg}";
 $Images = Alldiretorios($Dir);
 
 
 if (!empty($Images)):
     $DataHref = null;
     $jSON['gallery'] = '<ul>';
-    
+
     foreach ($Images as $arq):
         $DataHref = str_replace(array('../', 'uploads/'), '', $arq["pathName"]);
-        
-        $jSON['gallery'] .= "<li class='gal-item" . (!empty($ImgActive) && (stripos($ImgActive, $DataHref) !== false  ||  $ImgActive == $DataHref)? ' active' : null) ."'>";
+
+        $jSON['gallery'] .= "<li class='gal-item" . (!empty($ImgActive) && (stripos($ImgActive, $DataHref) !== false || $ImgActive == $DataHref) ? ' active' : null) . "'>";
         $jSON['gallery'] .= "<img src='../tim.php?src=" . str_replace('../', '', $arq["pathName"]) . "&w={$thumbW}&h={$thumbH}' /><br>";
         $jSON['gallery'] .= "<a class='btn btn_green btn_small url' data-href='" . $DataHref . "'>Usar</a>";
         $jSON['gallery'] .= "</li>";
