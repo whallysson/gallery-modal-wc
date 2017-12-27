@@ -116,37 +116,61 @@ Modal e gerenciador de imagens
             break;
 ```
 
-##### 5.2.2 - Dentro do case "manager" procure a verificação "if (!empty($_FILES['post_cover'])):" e substitua todo esse if por:
+##### 5.2.2 - Substitua o case "manager" por:
 ```php
-        if (!empty($_FILES['post_cover'])):
-            $File = $_FILES['post_cover'];
+        case 'manager':
+            $PostId = $PostData['post_id'];
+            $PostCoverFile = (isset($PostData['capa_cover_file']) ? $PostData['capa_cover_file'] : null );
+            unset($PostData['post_id'], $PostData['capa_cover_file']);
 
-            if ($ThisPost['post_cover'] && file_exists("../../uploads/{$ThisPost['post_cover']}") && !is_dir("../../uploads/{$ThisPost['post_cover']}")):
+            $Read->ExeRead(DB_POSTS, "WHERE post_id = :id", "id={$PostId}");
+            $ThisPost = $Read->getResult()[0];
 
-                $Read->FullRead("SELECT post_cover FROM " . DB_POSTS . " WHERE post_id != :ps AND post_cover = :pc", "ps={$PostId}&pc={$ThisPost['post_cover']}");
-                if (!$Read->getResult()):
-                    unlink("../../uploads/{$ThisPost['post_cover']}");
+            $PostData['post_name'] = (!empty($PostData['post_name']) ? Check::Name($PostData['post_name']) : Check::Name($PostData['post_title']));
+            $Read->ExeRead(DB_POSTS, "WHERE post_id != :id AND post_name = :name", "id={$PostId}&name={$PostData['post_name']}");
+            if ($Read->getResult()):
+                $PostData['post_name'] = "{$PostData['post_name']}-{$PostId}";
+            endif;
+            $jSON['name'] = $PostData['post_name'];
+
+            if (!empty($_FILES['post_cover'])):
+                $File = $_FILES['post_cover'];
+
+                if ($ThisPost['post_cover'] && file_exists("../../uploads/{$ThisPost['post_cover']}") && !is_dir("../../uploads/{$ThisPost['post_cover']}")):
+
+                    $Read->FullRead("SELECT post_cover FROM " . DB_POSTS . " WHERE post_id != :ps AND post_cover = :pc", "ps={$PostId}&pc={$ThisPost['post_cover']}");
+                    if (!$Read->getResult()):
+                        unlink("../../uploads/{$ThisPost['post_cover']}");
+                    endif;
+                endif;
+
+                $Upload = new Upload('../../uploads/');
+                $Upload->Image($File, $PostData['post_name'] . '-' . time(), IMAGE_W);
+                if ($Upload->getResult()):
+                    $PostData['post_cover'] = $Upload->getResult();
+                else:
+                    $jSON['trigger'] = AjaxErro("<b class='icon-image'>ERRO AO ENVIAR CAPA:</b> Olá {$_SESSION['userLogin']['user_name']}, selecione uma imagem JPG ou PNG para enviar como capa!", E_USER_WARNING);
+                    echo json_encode($jSON);
+                    return;
+                endif;
+            else:
+                // Adiciona a url ao post_cover
+                if (!empty($PostCoverFile)):
+                    $PostData['post_cover'] = $PostCoverFile;
+                    unset($PostData['capa_cover_file']);
+                else:
+                    unset($PostData['post_cover'], $PostData['capa_cover_file']);
                 endif;
             endif;
 
-            $Upload = new Upload('../../uploads/');
-            $Upload->Image($File, $PostData['post_name'] . '-' . time(), IMAGE_W);
-            if ($Upload->getResult()):
-                $PostData['post_cover'] = $Upload->getResult();
-            else:
-                $jSON['trigger'] = AjaxErro("<b class='icon-image'>ERRO AO ENVIAR CAPA:</b> Olá {$_SESSION['userLogin']['user_name']}, selecione uma imagem JPG ou PNG para enviar como capa!", E_USER_WARNING);
-                echo json_encode($jSON);
-                return;
-            endif;
-        else:
-            // Adiciona a url ao post_cover
-            if (!empty($PostData['capa_cover_file'])):
-                $PostData['post_cover'] = $PostData['capa_cover_file'];
-                unset($PostData['capa_cover_file']);
-            else:
-                unset($PostData['post_cover'], $PostData['capa_cover_file']);
-            endif;
-        endif;
+            $PostData['post_status'] = (!empty($PostData['post_status']) ? '1' : '0');
+            $PostData['post_date'] = (!empty($PostData['post_date']) ? Check::Data($PostData['post_date']) : date('Y-m-d H:i:s'));
+            $PostData['post_category_parent'] = (!empty($PostData['post_category_parent']) ? implode(',', $PostData['post_category_parent']) : null);
+
+            $Update->ExeUpdate(DB_POSTS, $PostData, "WHERE post_id = :id", "id={$PostId}");
+            $jSON['trigger'] = AjaxErro("<b class='icon-checkmark'>TUDO CERTO: </b> O post <b>{$PostData['post_title']}</b> foi atualizado com sucesso!");
+            $jSON['view'] = BASE . "/artigo/{$PostData['post_name']}";
+            break;
 ```
 
 
